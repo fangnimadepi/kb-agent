@@ -1,0 +1,338 @@
+{
+ "summary": {
+  "total": 30,
+  "task_completion_rate": 0.967,
+  "avg_tool_calls": 2.23,
+  "approval_gate_rate": 1.0,
+  "latency_p50": 14.4,
+  "latency_p95": 22.8,
+  "by_category": {
+   "数据分析": {
+    "pass": 9,
+    "total": 10
+   },
+   "创建工单": {
+    "pass": 5,
+    "total": 5
+   },
+   "创建工单-拒绝": {
+    "pass": 3,
+    "total": 3
+   },
+   "查询跟进": {
+    "pass": 5,
+    "total": 5
+   },
+   "知识检索": {
+    "pass": 2,
+    "total": 2
+   },
+   "多步组合": {
+    "pass": 5,
+    "total": 5
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "stat-01",
+   "category": "数据分析",
+   "ok": false,
+   "reason": "答案未含关键信息 ['400']",
+   "tool_calls": 2,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 14.1
+  },
+  {
+   "id": "stat-02",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 2,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 13.4
+  },
+  {
+   "id": "stat-03",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 10.6
+  },
+  {
+   "id": "stat-04",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 9.7
+  },
+  {
+   "id": "stat-05",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 2,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 16.0
+  },
+  {
+   "id": "stat-06",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 2,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 16.1
+  },
+  {
+   "id": "stat-07",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 11.2
+  },
+  {
+   "id": "stat-08",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 2,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 14.4
+  },
+  {
+   "id": "stat-09",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 2,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 13.9
+  },
+  {
+   "id": "stat-10",
+   "category": "数据分析",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 3,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 14.5
+  },
+  {
+   "id": "create-01",
+   "category": "创建工单",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 9.9
+  },
+  {
+   "id": "create-02",
+   "category": "创建工单",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 10.7
+  },
+  {
+   "id": "create-03",
+   "category": "创建工单",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 10.1
+  },
+  {
+   "id": "create-04",
+   "category": "创建工单",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 10.5
+  },
+  {
+   "id": "create-05",
+   "category": "创建工单",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 10.6
+  },
+  {
+   "id": "reject-01",
+   "category": "创建工单-拒绝",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 3,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 24.0
+  },
+  {
+   "id": "reject-02",
+   "category": "创建工单-拒绝",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 3,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 22.8
+  },
+  {
+   "id": "reject-03",
+   "category": "创建工单-拒绝",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 2,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 35.9
+  },
+  {
+   "id": "query-01",
+   "category": "查询跟进",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 3,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 15.7
+  },
+  {
+   "id": "query-02",
+   "category": "查询跟进",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 3,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 17.5
+  },
+  {
+   "id": "query-03",
+   "category": "查询跟进",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 3,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 15.9
+  },
+  {
+   "id": "query-04",
+   "category": "查询跟进",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 3,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 12.8
+  },
+  {
+   "id": "kb-01",
+   "category": "知识检索",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 12.0
+  },
+  {
+   "id": "kb-02",
+   "category": "知识检索",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 1,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 13.5
+  },
+  {
+   "id": "combo-01",
+   "category": "多步组合",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 4,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 15.3
+  },
+  {
+   "id": "combo-02",
+   "category": "多步组合",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 2,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 16.9
+  },
+  {
+   "id": "combo-03",
+   "category": "多步组合",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 5,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 18.0
+  },
+  {
+   "id": "combo-04",
+   "category": "多步组合",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 4,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 16.6
+  },
+  {
+   "id": "combo-05",
+   "category": "多步组合",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 4,
+   "gated": true,
+   "is_write": true,
+   "elapsed": 16.1
+  },
+  {
+   "id": "query-05",
+   "category": "查询跟进",
+   "ok": true,
+   "reason": "",
+   "tool_calls": 3,
+   "gated": false,
+   "is_write": false,
+   "elapsed": 13.7
+  }
+ ]
+}

@@ -1,0 +1,30 @@
+{"id": "stat-01", "category": "数据分析", "question": "现在总共有多少个工单？", "check": {"answer_contains_any": ["400"]}, "approve": true}
+{"id": "stat-02", "category": "数据分析", "question": "各优先级的工单分别有多少个？", "check": {"tools_used_any": ["ticket_stats", "query_tickets_sql"]}, "approve": true}
+{"id": "stat-03", "category": "数据分析", "question": "已解决工单的平均解决时长大概是多少小时？", "check": {"tools_used_any": ["ticket_stats", "query_tickets_sql"]}, "approve": true}
+{"id": "stat-04", "category": "数据分析", "question": "哪个模块（分类）的工单最多？", "check": {"tools_used_any": ["ticket_stats", "query_tickets_sql"]}, "approve": true}
+{"id": "stat-05", "category": "数据分析", "question": "P0 优先级工单的平均解决时长是多少？", "check": {"tools_used_any": ["query_tickets_sql", "ticket_stats"]}, "approve": true}
+{"id": "stat-06", "category": "数据分析", "question": "统计一下当前处于 open 状态的工单数量", "check": {"tools_used_any": ["query_tickets_sql", "ticket_stats", "list_tickets"]}, "approve": true}
+{"id": "stat-07", "category": "数据分析", "question": "按月统计今年每个月新建的工单数量", "check": {"tools_used_any": ["query_tickets_sql"]}, "approve": true}
+{"id": "stat-08", "category": "数据分析", "question": "部署运维类的工单有多少个未解决？", "check": {"tools_used_any": ["query_tickets_sql", "list_tickets"]}, "approve": true}
+{"id": "stat-09", "category": "数据分析", "question": "哪个负责人处理的工单最多？", "check": {"tools_used_any": ["query_tickets_sql"]}, "approve": true}
+{"id": "stat-10", "category": "数据分析", "question": "P0 和 P1 的高优先级工单一共多少个？", "check": {"tools_used_any": ["query_tickets_sql", "ticket_stats"]}, "approve": true}
+{"id": "create-01", "category": "创建工单", "question": "帮我建个工单：登录后 token 老是失效，认证授权模块，优先级 P1", "check": {"write_approved": "create_ticket"}, "approve": true}
+{"id": "create-02", "category": "创建工单", "question": "报个障：检索问答返回的结果完全不相关，帮我建工单跟踪", "check": {"write_approved": "create_ticket"}, "approve": true}
+{"id": "create-03", "category": "创建工单", "question": "文档入库批量上传总是部分失败，建个 P2 工单", "check": {"write_approved": "create_ticket"}, "approve": true}
+{"id": "create-04", "category": "创建工单", "question": "计费账单金额对不上，帮我登记一个工单", "check": {"write_approved": "create_ticket"}, "approve": true}
+{"id": "create-05", "category": "创建工单", "question": "部署的容器频繁 OOM 重启，紧急，建个 P0 工单", "check": {"write_approved": "create_ticket"}, "approve": true}
+{"id": "reject-01", "category": "创建工单-拒绝", "question": "帮我建个工单：测试一下拒绝流程", "check": {"write_rejected": "create_ticket"}, "approve": false}
+{"id": "reject-02", "category": "创建工单-拒绝", "question": "登记一个工单：权限管理模块越权访问漏洞，P0", "check": {"write_rejected": "create_ticket"}, "approve": false}
+{"id": "reject-03", "category": "创建工单-拒绝", "question": "报障建单：导出功能报错", "check": {"write_rejected": "create_ticket"}, "approve": false}
+{"id": "query-01", "category": "查询跟进", "question": "列出最近的 open 状态工单", "check": {"tools_used_any": ["list_tickets", "query_tickets_sql"]}, "approve": true}
+{"id": "query-02", "category": "查询跟进", "question": "有哪些 P0 的工单？", "check": {"tools_used_any": ["list_tickets", "query_tickets_sql"]}, "approve": true}
+{"id": "query-03", "category": "查询跟进", "question": "帮我看看正在处理中（in_progress）的工单有哪些", "check": {"tools_used_any": ["list_tickets", "query_tickets_sql"]}, "approve": true}
+{"id": "query-04", "category": "查询跟进", "question": "认证授权模块目前有多少个未解决的工单？", "check": {"tools_used_any": ["query_tickets_sql", "list_tickets"]}, "approve": true}
+{"id": "kb-01", "category": "知识检索", "question": "贵州茅台 2024 年的营业总收入是多少？", "check": {"tools_used_any": ["search_knowledge"], "answer_contains_any": ["1741", "1,741", "亿"]}, "approve": true}
+{"id": "kb-02", "category": "知识检索", "question": "茅台 2023 年的现金分红方案是什么？", "check": {"tools_used_any": ["search_knowledge"]}, "approve": true}
+{"id": "combo-01", "category": "多步组合", "question": "先看看部署运维类有多少工单，然后帮我建个工单：worker 队列积压严重，P1", "check": {"tools_used_any": ["query_tickets_sql", "ticket_stats", "list_tickets"], "write_approved": "create_ticket"}, "approve": true}
+{"id": "combo-02", "category": "多步组合", "question": "查一下 P0 工单的平均解决时长，如果超过 4 小时就帮我建个工单提醒优化响应速度", "check": {"tools_used_any": ["query_tickets_sql", "ticket_stats"], "write_approved": "create_ticket"}, "approve": true}
+{"id": "combo-03", "category": "多步组合", "question": "现在有多少未解决工单？帮我建一个 P2 工单跟踪本周积压清理", "check": {"tools_used_any": ["query_tickets_sql", "ticket_stats", "list_tickets"], "write_approved": "create_ticket"}, "approve": true}
+{"id": "combo-04", "category": "多步组合", "question": "统计各状态工单分布，并登记一个工单：申请本月工单运营周报自动化", "check": {"tools_used_any": ["ticket_stats", "query_tickets_sql"], "write_approved": "create_ticket"}, "approve": true}
+{"id": "combo-05", "category": "多步组合", "question": "查一下认证授权模块的工单情况，再建个 P1 工单：token 失效问题需要根因分析", "check": {"tools_used_any": ["query_tickets_sql", "list_tickets"], "write_approved": "create_ticket"}, "approve": true}
+{"id": "query-05", "category": "查询跟进", "question": "计费账单模块有多少个已解决的工单？", "check": {"tools_used_any": ["query_tickets_sql", "list_tickets"]}, "approve": true}
