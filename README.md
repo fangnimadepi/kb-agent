@@ -9,15 +9,7 @@
 
 ## 架构
 
-```
-用户 ──> LangGraph Agent（plan 意图拆解 → act 工具循环 → approval 人工审批 → reflect 反思重试）
-              │ MCP (stdio)
-      ┌───────┼───────────────┬──────────────┐
-   ticket           kb-search        web-fetch
-   工单 CRUD + 状态机       封装 KB-Copilot     网页抓取
-   + 统计 + 只读Text2SQL    两阶段检索 API      + 正文提取
-   (SQLite)
-```
+![架构图](docs/assets/framework.png)
 
 ## 三个 MCP Server（官方 python-sdk，可被任意 MCP 客户端复用）
 
