@@ -2,6 +2,27 @@
 
 > 每天记录：做了什么 / 踩了什么坑 / 做了什么决策。
 
+## 2026-07-15（Day 2 · M5 完成：两层记忆）
+
+**做了什么**
+- 短期记忆（agent/memory.py trim_history）：对话过长时按 token 预算裁剪，system 全保留、最新一条无条件保留、其余从新到旧到预算为止。**关键约束**：不能把 assistant(tool_calls) 和它的 tool 结果拆散，裁剪后若最前面是孤儿 tool 消息则丢弃（否则 LLM 报错）。接进 act_node 每次调 LLM 前
+- 长期记忆（MemoryStore over sqlite-vec）：会话结束 LLM 提炼用户持久事实/偏好 → bge-m3 向量化 → 存 sqlite-vec；下次同一用户来，按当前问题语义召回 top-k 注入 system。召回/写入在 runner 层（与图解耦），embedding 复用项目一硅基流动 bge-m3
+- 端到端跨会话验证（scripts/try_memory.py）：会话1 用户透露"我是负责文档入库的张工 + 关心 PDF parsing"并建工单；会话2 新会话只问"我之前关心的那个问题有类似历史工单吗"，系统召回身份+关注点，Agent 据此查到用户自己上一轮的工单。模糊指代被记忆解析
+- 38 单测全过
+
+**踩坑**
+- **sqlite 连接跨线程**：recall/写入经 asyncio.to_thread 在 worker 线程执行，连接建于主线程 → ProgrammingError。修：check_same_thread=False（记忆操作串行，安全）
+- DeepSeek json_object 模式返回对象不返回裸数组 → 提炼 prompt 明确要 {"memories": [...]}
+- 短期裁剪的边界：token 计数要兼容 dict 消息和 LangChain Message 对象（图里两种都有）
+
+**面试考点**
+- 两层记忆解决不同问题：短期=单会话上下文不爆窗口（token 裁剪）；长期=跨会话个性化（向量召回）。别混为一谈
+- 为什么长期记忆用向量召回而非全量塞：记忆会越积越多，全塞爆上下文且引入噪声；按当前问题语义召回 top-k 才 scalable
+- sqlite-vec：轻量本地向量库，无需起服务，适合边缘/单机 Agent 的记忆存储
+
+**下一步（M6：评测 + 收尾）**
+- 30 条多步任务评测：任务完成率 / 平均工具调用次数 / 审批拦截率；README 定稿
+
 ## 2026-07-15（Day 2 · M4 完成：人在回路审批工作流）★ 项目核心卖点
 
 **做了什么**

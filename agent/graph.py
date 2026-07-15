@@ -23,6 +23,7 @@ from langgraph.types import interrupt
 
 from agent.config import settings
 from agent.mcp_client import McpToolGateway
+from agent.memory import trim_history
 
 # 有副作用、需人工审批的写操作工具（读工具直接执行不拦）
 WRITE_TOOLS = {"create_ticket", "update_ticket"}
@@ -82,6 +83,7 @@ REFLECT_PROMPT = """用户最初的请求：{user_input}
 
 class AgentState(TypedDict):
     user_input: str
+    memory_context: str  # 长期记忆召回结果（runner 注入），空串表示无
     messages: Annotated[list, add_messages]  # 对话历史，跨节点累积（不是替换）
     trace: Annotated[list, operator.add]  # 可视化事件流
     tool_iters: int
@@ -101,10 +103,17 @@ def build_graph(gateway: McpToolGateway, checkpointer=None):
             ]
         )
         plan = resp.content
+        # 长期记忆：有召回则拼进 system，让后续工具调用带上用户历史偏好
+        system = SYSTEM
+        mem = state.get("memory_context", "")
+        trace = [{"type": "plan", "content": plan}]
+        if mem:
+            system = f"{SYSTEM}\n\n[关于当前用户的已知信息]\n{mem}"
+            trace.insert(0, {"type": "memory_recall", "content": mem})
         return {
-            "trace": [{"type": "plan", "content": plan}],
+            "trace": trace,
             "messages": [
-                {"role": "system", "content": SYSTEM},
+                {"role": "system", "content": system},
                 {"role": "user", "content": state["user_input"]},
                 {"role": "assistant", "content": f"（内部计划）{plan}"},
                 {"role": "user", "content": "请按计划执行，需要时调用工具。"},
@@ -112,7 +121,10 @@ def build_graph(gateway: McpToolGateway, checkpointer=None):
         }
 
     async def act_node(state: AgentState) -> dict:
-        resp = await llm_with_tools.ainvoke(state["messages"])
+        # 短期记忆：对话过长时按 token 预算裁剪后再喂给 LLM
+        resp = await llm_with_tools.ainvoke(
+            trim_history(state["messages"], settings.context_token_budget)
+        )
         new_messages = [resp]
         trace = []
 

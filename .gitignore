@@ -22,3 +22,5 @@ data/*.db
 .ruff_cache/
 data/tickets.db
 data/agent_checkpoints.db
+data/memory.db
+data/agent_checkpoints.db
