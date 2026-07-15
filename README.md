@@ -26,8 +26,8 @@
 
 ## Roadmap
 
-- [ ] M1：3 个 MCP server + MCP Inspector 验证
-- [ ] M2：LangGraph 编排（意图识别 → 拆解 → 工具调用 → 校验 → 反思重试 ≤2 次 + 兜底）
+- [x] M1：3 个 MCP server + MCP 客户端验证
+- [x] M2：LangGraph 编排（意图识别 → 拆解 → 工具调用 → 校验 → 反思重试 ≤2 次 + 兜底）
 - [ ] M3：记忆（短期窗口裁剪 + 长期向量记忆）
 - [ ] M4：30 条多步任务评测（完成率 / 平均工具调用次数 / 幻觉率）
 - [ ] M5：部署 + 接入 KB-Copilot 演示页 Agent 标签页

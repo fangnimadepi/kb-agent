@@ -38,18 +38,30 @@ def _payload_list(result) -> list:
 
 
 async def check_ticket(s: ClientSession) -> None:
-    r = _payload(await s.call_tool("create_ticket", {
-        "title": "文档入库任务卡在 parsing",
-        "description": "上传 PDF 后任务停在 parsing 5% 超过 10 分钟",
-        "reporter": "user-001",
-    }))
+    r = _payload(
+        await s.call_tool(
+            "create_ticket",
+            {
+                "title": "文档入库任务卡在 parsing",
+                "description": "上传 PDF 后任务停在 parsing 5% 超过 10 分钟",
+                "reporter": "user-001",
+            },
+        )
+    )
     tid = r["id"]
     print("create:", r)
     assert r["status"] == "open"
 
-    r = _payload(await s.call_tool("update_ticket", {
-        "ticket_id": tid, "status": "in_progress", "comment": "已检索到 FAQ：worker 崩溃重投场景"
-    }))
+    r = _payload(
+        await s.call_tool(
+            "update_ticket",
+            {
+                "ticket_id": tid,
+                "status": "in_progress",
+                "comment": "已检索到 FAQ：worker 崩溃重投场景",
+            },
+        )
+    )
     assert r["status"] == "in_progress"
 
     # 非法迁移必须被拒绝
@@ -76,7 +88,9 @@ async def check_web_fetch(s: ClientSession) -> None:
 
 
 async def check_kb_search(s: ClientSession) -> None:
-    r = _payload_list(await s.call_tool("search_knowledge", {"query": "2024年营业总收入", "top_k": 3}))
+    r = _payload_list(
+        await s.call_tool("search_knowledge", {"query": "2024年营业总收入", "top_k": 3})
+    )
     assert r, "检索结果为空"
     top = r[0]
     print(f"top1: {top['filename']} p{top['page_start']} score={top['rerank_score']}")
