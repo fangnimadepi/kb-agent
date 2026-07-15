@@ -32,7 +32,7 @@
 - [x] M1：3 个 MCP server + MCP 客户端验证
 - [x] M2：LangGraph 编排（意图识别 → 拆解 → 工具调用 → 校验 → 反思重试 ≤2 次 + 兜底）
 - [x] M3：工单数据分析（400 条合成工单 + 结构化统计 + 只读 Text2SQL 防注入）
-- [ ] M4：人在回路审批工作流（LangGraph interrupt + checkpointer，创建/升级工单需人工签核）
+- [x] M4：人在回路审批工作流（LangGraph interrupt + SQLite checkpointer，写操作需人工签核）
 - [ ] M5：记忆（短期窗口裁剪 + 长期向量记忆）
 - [ ] M6：30 条多步任务评测（完成率 / 工具调用次数 / 审批拦截率）
 

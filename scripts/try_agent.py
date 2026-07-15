@@ -33,6 +33,13 @@ async def main() -> None:
                 f"{ICON[t]}: ok={ev['ok']}"
                 + (f"  reason={ev.get('reason')}" if not ev["ok"] else "")
             )
+        elif t == "approval_decision":
+            mark = "✅ 批准" if ev.get("approved") else "⛔ 拒绝"
+            print(f"⚖️  审批: {ev['summary']} -> {mark}({ev.get('approver', '')})")
+        elif t == "tool_rejected":
+            print(f"🚫 跳过: {ev['tool']}（{ev.get('reason', '审批未通过')}）")
+        elif t == "approval_prompt":
+            pass  # 命令行审批已在 ConsoleApprover 内打印，避免重复
         else:
             print(f"{ICON[t]}: {ev['content']}")
     print("=" * 70)

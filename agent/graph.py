@@ -18,9 +18,29 @@ from typing import Annotated, TypedDict
 
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
+from langgraph.graph.message import add_messages
+from langgraph.types import interrupt
 
 from agent.config import settings
 from agent.mcp_client import McpToolGateway
+
+# 有副作用、需人工审批的写操作工具（读工具直接执行不拦）
+WRITE_TOOLS = {"create_ticket", "update_ticket"}
+
+
+def _write_summary(tool: str, args: dict) -> str:
+    """把写操作翻译成一句人类可读的"将要发生什么"，给审批人看。"""
+    if tool == "create_ticket":
+        return f"创建工单：[{args.get('priority', 'P2')}] {args.get('title', '')}"
+    if tool == "update_ticket":
+        bits = [f"工单 {args.get('ticket_id', '')}"]
+        if args.get("status"):
+            bits.append(f"状态→{args['status']}")
+        if args.get("assignee"):
+            bits.append(f"指派→{args['assignee']}")
+        return "更新" + "，".join(bits)
+    return f"{tool} {args}"
+
 
 _llm = ChatOpenAI(
     model=settings.llm_model,
@@ -62,14 +82,15 @@ REFLECT_PROMPT = """用户最初的请求：{user_input}
 
 class AgentState(TypedDict):
     user_input: str
-    messages: list  # 传给 LLM 的对话（含工具结果）
+    messages: Annotated[list, add_messages]  # 对话历史，跨节点累积（不是替换）
     trace: Annotated[list, operator.add]  # 可视化事件流
     tool_iters: int
     reflect_retries: int
     answer: str
+    pending_writes: list  # 待审批的写操作工具调用队列
 
 
-def build_graph(gateway: McpToolGateway):
+def build_graph(gateway: McpToolGateway, checkpointer=None):
     llm_with_tools = _llm.bind_tools(gateway.openai_tools())
 
     async def plan_node(state: AgentState) -> dict:
@@ -102,12 +123,55 @@ def build_graph(gateway: McpToolGateway):
                 "trace": [{"type": "answer", "content": resp.content}],
             }
 
+        # 读工具立即执行；写工具入队等审批（此节点不 interrupt，避免副作用被重放）
+        pending = []
         for tc in resp.tool_calls:
+            if tc["name"] in WRITE_TOOLS:
+                pending.append({"name": tc["name"], "args": tc["args"], "id": tc["id"]})
+                continue
             trace.append({"type": "tool_call", "tool": tc["name"], "args": tc["args"]})
             result = await gateway.call(tc["name"], tc["args"])
             trace.append({"type": "tool_result", "tool": tc["name"], "result": result})
             new_messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
-        return {"messages": new_messages, "trace": trace, "tool_iters": state["tool_iters"] + 1}
+        return {
+            "messages": new_messages,
+            "trace": trace,
+            "tool_iters": state["tool_iters"] + 1,
+            "pending_writes": pending,
+        }
+
+    async def approval_node(state: AgentState) -> dict:
+        """人在回路：对队首写操作发起审批并挂起。interrupt 之外不做任何事，
+        保证 resume 时本节点重放无副作用。resume 传入 {approved, approver, comment}。"""
+        wr = state["pending_writes"][0]
+        summary = _write_summary(wr["name"], wr["args"])
+        decision = interrupt(
+            {"type": "approval_request", "tool": wr["name"], "args": wr["args"], "summary": summary}
+        )
+        return {"trace": [{"type": "approval_decision", "summary": summary, **decision}]}
+
+    async def execute_write_node(state: AgentState) -> dict:
+        """审批后执行或跳过队首写操作，并为其 tool_call_id 补上结果消息
+        （否则下一轮 LLM 调用会因 tool_call 无响应而报错）。"""
+        wr = state["pending_writes"][0]
+        decision = state["trace"][-1]  # approval_node 刚写入的裁决
+        if decision.get("approved"):
+            trace = [{"type": "tool_call", "tool": wr["name"], "args": wr["args"]}]
+            result = await gateway.call(wr["name"], wr["args"])
+            trace.append({"type": "tool_result", "tool": wr["name"], "result": result})
+        else:
+            result = json.dumps(
+                {"rejected": True, "reason": decision.get("comment", "审批未通过，未执行")},
+                ensure_ascii=False,
+            )
+            trace = [
+                {"type": "tool_rejected", "tool": wr["name"], "reason": decision.get("comment")}
+            ]
+        return {
+            "messages": [{"role": "tool", "tool_call_id": wr["id"], "content": result}],
+            "trace": trace,
+            "pending_writes": state["pending_writes"][1:],
+        }
 
     async def finalize_node(state: AgentState) -> dict:
         """工具循环撞上限却还没答案：强制不带工具生成最终回答，避免终态为空。"""
@@ -161,12 +225,18 @@ def build_graph(gateway: McpToolGateway):
         }
 
     def route_after_act(state: AgentState) -> str:
-        # 有答案（无工具调用）→ 去反思；撞工具上限但没答案 → finalize 强制出答案
+        # 有写操作待审批 → 先过审批闸；否则按原逻辑走反思/兜底/继续
+        if state.get("pending_writes"):
+            return "approval"
         if state.get("answer"):
             return "reflect"
         if state["tool_iters"] >= settings.max_tool_iterations:
             return "finalize"
         return "act"
+
+    def route_after_execute(state: AgentState) -> str:
+        # 还有排队的写操作 → 回审批处理下一个；否则回 act 让 LLM 看到工具结果继续
+        return "approval" if state.get("pending_writes") else "act"
 
     def route_after_reflect(state: AgentState) -> str:
         last_reflect = next(e for e in reversed(state["trace"]) if e["type"] == "reflect")
@@ -177,13 +247,21 @@ def build_graph(gateway: McpToolGateway):
     g = StateGraph(AgentState)
     g.add_node("plan", plan_node)
     g.add_node("act", act_node)
+    g.add_node("approval", approval_node)
+    g.add_node("execute_write", execute_write_node)
     g.add_node("finalize", finalize_node)
     g.add_node("reflect", reflect_node)
     g.set_entry_point("plan")
     g.add_edge("plan", "act")
     g.add_conditional_edges(
-        "act", route_after_act, {"act": "act", "reflect": "reflect", "finalize": "finalize"}
+        "act",
+        route_after_act,
+        {"approval": "approval", "act": "act", "reflect": "reflect", "finalize": "finalize"},
+    )
+    g.add_edge("approval", "execute_write")
+    g.add_conditional_edges(
+        "execute_write", route_after_execute, {"approval": "approval", "act": "act"}
     )
     g.add_edge("finalize", "reflect")
     g.add_conditional_edges("reflect", route_after_reflect, {"act": "act", END: END})
-    return g.compile()
+    return g.compile(checkpointer=checkpointer)

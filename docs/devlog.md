@@ -2,6 +2,28 @@
 
 > 每天记录：做了什么 / 踩了什么坑 / 做了什么决策。
 
+## 2026-07-15（Day 2 · M4 完成：人在回路审批工作流）★ 项目核心卖点
+
+**做了什么**
+- 审批渠道抽象（agent/approval.py）：Approver 接口 + AutoApprover（策略自动裁决，供评测/测试）+ ConsoleApprover（命令行 y/n）。飞书等真集成即扩展一个 Approver，图不动
+- 图加审批闸（agent/graph.py）：写操作（create/update_ticket）不直接执行——act 把写工具入队 pending_writes → approval 节点 LangGraph interrupt 挂起 → execute_write 按裁决执行或跳过。读工具（检索/统计/SQL）不拦，直接执行
+- 持久化：AsyncSqliteSaver checkpointer，interrupt 时状态落 data/agent_checkpoints.db（实测 44 条 checkpoint 落盘）——进程退出也能从断点续跑，这是"AI 发起→人工签核→自动续跑"完整故事的基础
+- runner 改为 interrupt/resume 循环：stream 到挂起 → aget_state 取审批请求 → approver 决策 → Command(resume=决策) 续跑
+- 端到端三场景全过：纯读零审批 / 写操作批准后执行 / 写操作拒绝后跳过不执行。33 单测全过
+
+**踩坑（都是硬核）**
+- **messages 字段没配 reducer = 静默数据损坏**：M2 起 AgentState.messages 是普通 list，每个节点返回的 messages **替换**整个历史而非追加。M2 单节点侥幸能跑，但审批流多节点追加（act 加助手消息+读结果、execute_write 补写结果）立刻暴露——LLM 收到孤立的 tool 消息，报"tool message must follow tool_calls"。修法：Annotated[list, add_messages]。教训：LangGraph 里凡是要累积的字段必须配 reducer，否则是替换
+- **interrupt 节点会重放**：LangGraph 从断点 resume 时，含 interrupt 的节点会从头重新执行。所以 approval 节点里只放 interrupt、不做任何副作用；真正执行写操作放在独立的 execute_write 节点（不 interrupt，不重放）。读工具也不能放在会 interrupt 的节点里
+- **tool_call_id 契约**：一个助手消息里的每个 tool_call 都必须有对应的 tool 结果消息，下一次 LLM 调用才不报错。所以写操作被拒绝时也要补一条"已拒绝"的 tool 结果消息，不能只是跳过
+
+**面试考点（这块最值钱）**
+- 为什么审批要 human-in-the-loop 而非 AI 自主：企业里有副作用的操作（改工单状态、扣费、发消息）需要审计和签核，Agent 全自动是合规风险。这是 Agent 落地企业的关键门槛
+- LangGraph interrupt + checkpointer 怎么实现"挂起-续跑"：状态持久化到 SQLite，interrupt 抛出请求，外部拿到审批后 Command(resume) 从断点继续，进程崩了也不丢
+- 为什么审批渠道要抽象：解耦"审批逻辑"与"审批渠道"，命令行/网页/飞书只是不同 Approver，符合开闭原则
+
+**下一步（M5：记忆）**
+- 短期：对话窗口按 token 裁剪（复用项目一思路）；长期：对话摘要存向量库，跨会话召回用户偏好
+
 ## 2026-07-15（Day 2 下半场 · 项目重新定位 + M3 数据分析能力）
 
 **项目重新定位（重要）**
