@@ -14,6 +14,8 @@ create = ticket.create_ticket
 get = ticket.get_ticket
 update = ticket.update_ticket
 list_ = ticket.list_tickets
+stats = ticket.ticket_stats
+sql = ticket.query_tickets_sql
 
 
 def test_create_and_get():
@@ -75,3 +77,42 @@ def test_invalid_status_value():
 )
 def test_transition_table(frm, to, ok):
     assert (to in ticket.TRANSITIONS[frm]) == ok
+
+
+def test_resolved_at_recorded():
+    t = create("x", "y", "u6", priority="P0")
+    update(t["id"], status="resolved", comment="done")
+    assert get(t["id"])["resolved_at"] is not None
+
+
+def test_stats_shape():
+    s = stats()
+    assert {"total", "by_status", "by_priority", "by_category", "avg_resolution_hours"} <= s.keys()
+    assert s["total"] == sum(s["by_status"].values())
+
+
+def test_sql_select_works():
+    r = sql("SELECT COUNT(*) AS n FROM tickets")
+    assert r["columns"] == ["n"] and r["rows"][0][0] >= 0
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "DELETE FROM tickets",
+        "DROP TABLE tickets",
+        "UPDATE tickets SET status='closed'",
+        "INSERT INTO tickets VALUES (1)",
+        "SELECT 1; DELETE FROM tickets",
+        "SELECT * FROM tickets; DROP TABLE tickets",
+    ],
+)
+def test_sql_write_rejected(bad):
+    assert "error" in sql(bad)
+
+
+def test_sql_write_leaves_data_intact():
+    before = sql("SELECT COUNT(*) FROM tickets")["rows"][0][0]
+    sql("DELETE FROM tickets")  # 被拦
+    after = sql("SELECT COUNT(*) FROM tickets")["rows"][0][0]
+    assert before == after

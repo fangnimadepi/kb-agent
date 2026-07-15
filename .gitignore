@@ -20,3 +20,4 @@ data/*.db
 # 测试
 .pytest_cache/
 .ruff_cache/
+data/tickets.db

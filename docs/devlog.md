@@ -2,6 +2,32 @@
 
 > 每天记录：做了什么 / 踩了什么坑 / 做了什么决策。
 
+## 2026-07-15（Day 2 下半场 · 项目重新定位 + M3 数据分析能力）
+
+**项目重新定位（重要）**
+- 放弃"茅台知识库↔工单"的硬凑。定位改为**企业工单智能运维 Agent**：服务内部支持/运维团队，三个真本事——工单数据分析、人在回路审批工作流、知识检索（kb-search 保留为工具）。
+- 约束确认：仅本地跑 + 推 GitHub，不部署服务器；演示不重要，目标丰富简历 → 力气花在能讲深的能力上。
+- 两个决策：审批=可插拔模式（interrupt + pluggable approver，飞书留可选适配器不做真集成）；数据分析=混合（结构化统计工具 + 只读 Text2SQL）。
+
+**M3 做了什么**
+- 工单库 schema 升级（servers/ticket_db.py 共享）：加 priority/category/assignee/resolved_at，支撑"按优先级统计、平均解决时长、按模块分布"
+- 种子脚本（scripts/seed_tickets.py）：400 条真实感合成工单，2026-01~07，状态/优先级/分类分布合理，解决时长按优先级分层（P0 快 P3 慢）
+- 三类工具：CRUD+状态机（保留）、ticket_stats（结构化概览快照）、query_tickets_sql（只读 Text2SQL）
+- 只读 Text2SQL 双重防护：① 语句校验（仅单条 SELECT/WITH、拦写关键字、拦分号多语句）② 数据库只读连接（mode=ro，纵深防御）。6 种注入/写攻击全部拦截、数据完好
+- 端到端：Agent 面对"统计各优先级数量+平均解决时长+哪个模块报障最多"，自己写出正确 SQLite（julianday/strftime/CASE WHEN/GROUP BY），产出完整运营周报，reflect ok=True。P0 平均 5.7h / P3 90.7h 梯度清晰
+- 25 单测全过
+
+**踩坑**
+- **FastMCP 装饰时固化工具描述**：想把 schema 动态拼进 query_tickets_sql 的描述，事后改 `__doc__` 不生效（M1 的描述是装饰时从 docstring 读的）。解法：`@mcp.tool(description=...)` 显式传参，def-time 就把 SCHEMA_DOC 拼进去。这样 Agent 的 LLM 才能通过 list_tools 看到表结构、正确生成 SQL
+- Text2SQL 的 schema 必须让模型看到——把表结构写进工具描述是关键，否则模型瞎猜列名
+
+**面试考点**
+- Text2SQL 的安全：为什么"LLM 生成 SQL"必须配只读校验 + 只读连接双层防护（LLM 会被 prompt 注入诱导写危险 SQL）；结构化工具 vs Text2SQL 的取舍（常见问题走结构化省 token 更稳，长尾问题走 SQL 更灵活）
+- MCP server 不该持有 LLM key：Text2SQL 的"NL→SQL"智能放在 Agent 侧，server 只做"校验+执行"，职责清晰
+
+**下一步（M4：人在回路审批工作流）★ 核心卖点**
+- LangGraph interrupt + checkpointer：创建/升级工单前挂起 → 发审批 → 人工批准 → 断点续跑
+
 ## 2026-07-15（Day 2 · M2 完成：LangGraph 编排）
 
 **做了什么**
